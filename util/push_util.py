@@ -1,4 +1,5 @@
 import json
+import os
 
 import requests
 from datetime import datetime
@@ -151,31 +152,20 @@ def not_in_push_time_range(config: PushConfig) -> bool:
 
     time_bj = get_beijing_time()
 
-    # 首先根据时间判断，如果匹配 直接返回
-    if config.push_plus_hour.isdigit():
-        if time_bj.hour == int(config.push_plus_hour):
-            print(f"当前设置推送整点为：{config.push_plus_hour}, 当前整点为：{time_bj.hour}，执行推送")
-            return False
+    if not config.push_plus_hour.isdigit():
+        return False
 
-    # 如果时间不匹配，检查cron_change_time文件中的记录
-    # 读取cron_change_time文件中的最后一行数据：“next exec time: UTC(7:35) 北京时间(15:35)” 中的整点数
-    # 然后用来对比是否当前时间，避免因为Actions执行延迟导致推送失效
-    try:
-        with open('cron_change_time', 'r') as f:
-            lines = f.readlines()
-            if lines:
-                last_line = lines[-1].strip()
-                # 提取北京时间的小时数
-                import re
-                match = re.search(r'北京时间\(0?(\d+):\d+\)', last_line)
-                if match:
-                    cron_hour = int(match.group(1))
-                    if int(config.push_plus_hour) == cron_hour:
-                        print(
-                            f"当前设置推送整点为：{config.push_plus_hour}, 根据执行记录，本次执行整点为：{cron_hour}，执行推送")
-                        return False
-    except Exception as e:
-        print(f"读取cron_change_time文件出错: {e}")
+    # 首先根据时间判断，如果匹配 直接返回
+    if time_bj.hour == int(config.push_plus_hour):
+        print(f"当前设置推送整点为：{config.push_plus_hour}, 当前整点为：{time_bj.hour}，执行推送")
+        return False
+
+    scheduled_hour = os.getenv('SCHEDULED_BEIJING_HOUR')
+    if scheduled_hour and scheduled_hour.isdigit():
+        if int(config.push_plus_hour) == int(scheduled_hour):
+            print(
+                f"当前设置推送整点为：{config.push_plus_hour}, 本次计划执行整点为：{scheduled_hour}，执行推送")
+            return False
     print(f"当前整点时间为：{time_bj}，不在配置的推送时间，不执行推送")
     return True
 
