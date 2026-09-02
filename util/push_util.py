@@ -1,5 +1,4 @@
 import json
-import os
 
 import requests
 from datetime import datetime
@@ -160,12 +159,6 @@ def not_in_push_time_range(config: PushConfig) -> bool:
         print(f"当前设置推送整点为：{config.push_plus_hour}, 当前整点为：{time_bj.hour}，执行推送")
         return False
 
-    scheduled_hour = os.getenv('SCHEDULED_BEIJING_HOUR')
-    if scheduled_hour and scheduled_hour.isdigit():
-        if int(config.push_plus_hour) == int(scheduled_hour):
-            print(
-                f"当前设置推送整点为：{config.push_plus_hour}, 本次计划执行整点为：{scheduled_hour}，执行推送")
-            return False
     print(f"当前整点时间为：{time_bj}，不在配置的推送时间，不执行推送")
     return True
 
